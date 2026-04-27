@@ -1,321 +1,142 @@
+<div align="center">
+
 # Flappy Bird Clone
 
+**A 2D side-scrolling Flappy Bird clone built in Unity with sprite animation, parallax scrolling, and full game state management.**
+
+[![Unity](https://img.shields.io/badge/Engine-Unity-000000?style=flat-square&logo=unity&logoColor=white)](https://unity.com/)
+[![C#](https://img.shields.io/badge/Language-C%23-512BD4?style=flat-square&logo=csharp&logoColor=white)](https://learn.microsoft.com/en-us/dotnet/csharp/)
+[![Platform](https://img.shields.io/badge/Platform-PC%20%7C%20Mobile-lightgrey?style=flat-square)]()
+[![Completed](https://img.shields.io/badge/Completed-January%202025-brightgreen?style=flat-square)]()
+
+</div>
+
 ---
-finish date: 2025-01-10
-aliases:
-  - 2D
-  - Basic
+
+## Table of Contents
+
+- [About the Project](#about-the-project)
+- [Features](#features)
+- [Project Structure](#project-structure)
+- [Scripts Overview](#scripts-overview)
+- [Getting Started](#getting-started)
+
 ---
 
-> Flappy Bird is a mobile game developed by Vietnamese video game artist and programmer Dong Nguyen. The game is a side-scroller where the player controls a bird, attempting to fly between columns of green pipes without hitting them.
+## About the Project
 
-### Importing Assets
-- Download the zip file: https://github.com/zigurous/unity-flappy-bird-tutorial
-- Go inside assets - sprites and put all the png file into sprites file, Font into Fonts file
-- Bird
-	- Change pixels per unit to **24**
-	- Change the filter mode to **Point (no filter)** - maintaining pixel style graphics
-	- Max size to **256**, Format to **RGBA 32 bit**
+This is a Unity recreation of Flappy Bird — the iconic side-scrolling mobile game originally developed by Dong Nguyen. The player controls a bird and must navigate through an endless series of pipe obstacles without colliding. The clone replicates the original's core gameplay while implementing clean, modular Unity scripting patterns across player input, procedural pipe spawning, parallax backgrounds, UI management, and scoring.
 
+---
 
-### Basic Setup
-- Bird
-	- Add **Player tag**
-	- Add **Rigidbody 2D**
-	    - **Body type:** Kinematic (does not simulate physics but can detect collisions)
-	- Add **Collider 2D**
+## Features
 
-### Script Creation
-- Create Script - Player
-	- For reading player input and control the bird's movement
-### Input And Movement
+| Category | Feature |
+|---|---|
+| **Player Control** | Keyboard (Space), mouse click, and mobile touch input |
+| **Animation** | Frame-by-frame sprite cycling for bird flap animation |
+| **Parallax Scrolling** | Looping background and ground using material texture offset |
+| **Pipe System** | Procedural pipe spawning at randomised heights with automatic cleanup |
+| **Collision Detection** | Trigger-based detection for obstacles and scoring zones |
+| **Game State** | Play, pause, and game over states managed by a central Game Manager |
+| **Scoring** | Real-time score display updated on pipe pass |
+| **UI** | Canvas-based UI with score text, play button, and game over screen |
+| **Frame Rate** | Locked to 60 FPS for consistent gameplay |
 
-```
-// Player.cs
+---
 
-public class Player: MonoBehaviour{
-	private Vector 3 _direction;
-	public float gravity = -9.8f;
-	public float strength = 5f;
-
-	// Update per frame
-	private void Update(){
-		if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0)){
-			// Vector3.up === Vector3(0, 1, 0)
-			_direction = Vector3.up * strength;
-		}
-		
-		// Mobile setup
-		if (Input.touchCount > 0){
-			Touch touch = Input.GetTouch(0);
-
-			// Tapping just start
-			if (touch.phase == TouchPhase.Began){
-				_direction = Vector3.up * strength;
-			}
-		}
-
-		_direction.y += gravity * Time.deltaTime;
-		transform.position += _direction * Time.deltaTime;
-	}
-}
-```
-
-### Sprite Animation
-**Add variable and method in player script**
-==***Add variable and method for player script, which looping image of sprite for animation***==
+## Project Structure
 
 ```
-// Player.cs
-
-private SpriteRenderer _spriteRenderer;
-public Sprite[] sprites;
-private int _spriteIndex;
-
-	
-private void Awake(){
-	// Get Component of the object
-	_spriteRenderer = GetComponent<SpriteRenderer>();
-}	
-
-// Call when first frame the object is available
-private void Start(){
-	// InvokeRepeating - calling method by waiting time and delay time
-	InvokeRepeating(nameof(AnimateSprite), 0.15f, 0.15f);
-}
-
-// Loop the sprite in Sprite[]
-private void AnimateSprite(){
-	_spriteIndex++;
-	
-	if (_spiteIndex >= Sprite.length){
-		_spriteIndex = 0;
-	}
-	_spriteRenderer.sprite = sprites[_spriteIndex];
-}
+Assets/
+├── Settings/               # Screen settings
+├── Fonts/                  # Bitmap fonts
+├── Sprites/                # Bird, pipe, background, and ground sprites
+├── Materials/              # Background and ground scrolling materials
+├── Prefabs/
+│   └── Pipes.prefab        # Pipe obstacle prefab
+├── Scripts/
+│   ├── Player.cs           # Player input, movement, and collision
+│   ├── Parallax.cs         # Background and ground scrolling
+│   ├── PipesMovement.cs    # Pipe movement and off-screen cleanup
+│   ├── Spawner.cs          # Procedural pipe spawning
+│   └── GameManager.cs      # Game state, scoring, and UI control
+└── Scenes/
+    └── Main.unity          # Main game scene
 ```
 
-### Background Parallax
-**Background**
-- Create 3D object - Quad
-	- Create a material
-	- Shader - **Unit/Texture**
-	- Remove **Collider**
-	- Resize the **object**
-	- Change the **tile mode of material**
-	- Change the background asset wrap mode to **repeat**
-**Ground**
-- Create 3D object - Quad
-	- Create a material
-	- Shader - **Unit/Texture** 
-	- Resize the **object**
-	- Change the **tile mode of material**
-	- Change the background asset wrap mode to **repeat**
-- Create Script - Parallax
-	- For both background and ground to loop the background
+---
 
+## Scripts Overview
 
+### `Player.cs`
+Handles player input across keyboard, mouse, and touch. Applies custom gravity and upward impulse on tap. Cycles through sprite frames for flap animation using `InvokeRepeating`. Detects trigger collisions with `Obstacle` and `Scoring` tagged objects to call `GameOver` or `IncreaseScore` on the Game Manager.
 
-```
-// Parallax.cs
-public class Parallax: MonoBehaviour{
-	private MeshRenderer _meshRenderer;
-	public float animationSpeed = 0.5f;
+### `Parallax.cs`
+Attached to both the background and ground Quad objects. Continuously offsets the material's `mainTextureOffset` each frame to produce an infinite scrolling effect without moving the actual geometry.
 
-	private void Awake(){
-		_meshRenderer = GetComponenet<MeshRenderer>();
-	}
+### `PipesMovement.cs`
+Moves each pipe prefab instance leftward at a fixed speed. Calculates the left edge of the screen in world space on `Start` and destroys the pipe GameObject once it passes off-screen to manage memory.
 
-	private void Update(){
-		// Keep changing the offset of material to make it move
-		_meshRenderer.material.mainTextureOffset += new Vector(animationSpeed * Time.deltaTime, 0);
-	}
-}
-```
+### `Spawner.cs`
+Uses `InvokeRepeating` to instantiate pipe prefabs at a set interval. Randomises vertical position within a configurable `minHeight` / `maxHeight` range. Disables spawning automatically when the Game Manager pauses the game via `OnDisable`.
 
-### Pipes Prefab 
-- Create Pipe Object
-	- Create a child GameObject - Sprite - UpperPipe
-		- Put UpperPipe source image to it
-	- Create a child GameObject - Sprite - MiddlePipe
-		- Put UpperPipe source image to it
-	- Create a child GameObject - Sprite - BottomPipe
-		- Put UpperPipe source image to it
-	- Create Script - PipesMovement
-		- For looping the pipe to move from right
+### `GameManager.cs`
+Central controller for game flow. Manages `Time.timeScale` to pause and resume the game, resets score and destroys existing pipes on play, and toggles UI elements (play button, game over image, score text) based on the current game state.
 
-```
-// PipesMovement.cs
+---
 
-public class PipesMovement: MonoBehaviour{
-	public float speed = 5f;
-	private float _leftEdge;
+## Tag Reference
 
-	private void Start(){
-		// Get the Vector3.zero of camera point to world point, -1f is just offset of
-		_leftEdge = Camera.main.ScreenToWorldPoint(Vector3.zero).x - 1f;
-	}
+| Tag | Applied To | Purpose |
+|---|---|---|
+| `Player` | Bird GameObject | Identifies the player object |
+| `Obstacle` | Top pipe, bottom pipe, ground | Triggers game over on contact |
+| `Scoring` | Middle pipe gap trigger | Increments score on pass |
 
-	private void Update(){
-		transform.position += Vector3.left * speed * Time.deltaTime;
-	
-		// Detect if pipes cross the leftEdge of the screen
-		if(transform.position.x < leftEdge){
-			Destroy(gameObject);
-		}
-	}
-}	
-```
+---
 
-### Pipe Spawner 
-- Create a Empty GameObject - Pipe Spawner
-- Create a Script - Spawner
-	- For auto spawning pipes when game is not over
+## Getting Started
 
-```
-// Spawner.cs
+### Prerequisites
 
-public class Spawner: MonoBehaviour{
-	public GameObject prefab;    // Store the prefab
-	public float spawnRate = 1f;
-	public float minHeight = -1f;
-	public float maxHeight = 1f;
+- [Unity](https://unity.com/download) 2021.x or later (2D module required)
+- [Git](https://git-scm.com/)
 
-	// Can disable this when it's not use
-	private void onEnable(){
-		InvokeRepeating(nameof(Spawn), spawnRate, spawnRate);
-	}
+### Installation
 
-	private void onDisable(){
-		CancelInvoke(nameof(Spawn));
-	}
+1. **Clone the repository**
 
-	private void Spawn(){
-		// Instantiate object called pipes by coloning prefab, Quaternion.identity means no rotation
-		GameObject pipes = Instantiate(prefab, transform.position, Quaternion.identity);
-		pipes.transform.position += Vector3.up * Random.Range(minHeight, maxHeight);
-	}
-}
-```
+   ```bash
+   git clone https://github.com/randombytebit/Flappy-Bird.git
+   ```
 
+2. **Import assets**
 
-### Game State & Scoring
-- Create a Empty GameObject - Game Manager
-- Create a Script - GameManager
-	- For manage the whole logic of the game
+   Download the sprite assets from the original tutorial repository:
+   ```
+   https://github.com/zigurous/unity-flappy-bird-tutorial
+   ```
+   Place `.png` sprite files into `Assets/Sprites/` and font files into `Assets/Fonts/`.
 
+3. **Configure sprite import settings**
 
-```
-// GameManager.cs
+   For the bird sprite, set the following in the Inspector:
+   - Pixels Per Unit: `24`
+   - Filter Mode: `Point (no filter)`
+   - Max Size: `256`
+   - Format: `RGBA 32 bit`
 
-public class GameManager: Monobehaviour{
-	private int _score;
+4. **Open the project in Unity**
 
-	public void GameOver(){
-	}
-	
-	public void IncreaseScore(){
-		_score++;
-	}
-}
-```
+   Launch Unity Hub, click **Open**, and select the cloned project folder.
 
-==After finish the create of game manager script, set tag of TopPipe, BottomPipe, and Ground to **Obstacle** - if the player hits, game over. Set tag of MiddlePipe to **Scoring**==
+5. **Open the Main scene and press Play.**
 
-==Add method for the player script. When the player collider with game object with **obstacle** tag, it will call **gameover** function in gamemanager.==
+---
 
+<div align="center">
 
-```
-// Player.cs
+Flappy Bird Clone · Built with Unity · Completed January 2025
 
-private void OnTriggerEnter2D(Collider2D other){
-	if (other.gameObject.tag == "Obstacle"){
-		// Always better function to use, but use it here first
-		FindObjectOfType<GameManager>().GameOver();
-	} else if (other.gameObject.tag == "Scoring"){
-		FindObjectOfType<GameManager>().IncreaseScore();
-	}
-}
-```
-
-### UI Design
-- Create a Canvas
-    - **Canvas Scaler:** Scale with Screen Size
-    - **Based on Height:** For some devices that are not 16/9
-- Add a child UI Text element
-    - Add outline (optional)
-- Add a child UI Image element
-    - Set native size - no stretch
-- Add a child UI Button element
-
-**Add variables and methods to GameManager script:**
-
-
-```
-// GameManager.cs
-
-// reference to UI elements
-public Player playerSprite;
-public Text scoreText;	
-public GameObject playbutton;
-public GameObject gameOverImage;
-
-private void Awake(){
-	Application.targetFrameRate = 60;
-	// When the game starts, pause the game until the player presses play
-	Pause();
-}
-
-private void Play(){
-	// initialize all the states
-	score = 0;
-	scoreText.text = score.ToString();
-	
-	playButton.setActive(false);		
-	gameOverImage.setActive(false);
-	
-	Time.timeScale = 1f;
-	player.enabled = true;
-
-	// Destroy all the pipes
-	Pipes[] pipes = FindObjectOfType<Pipes>();
-	for (int i = 0; i < pipes.Length; i++){
-	Destroy(pipes[i].gameObject);
-	}
-}
-
-private void Pause(){
-	// Time is not updating - no update method is running
-	Time.timeScale = 0f;
-	player.enabled = false;
-}
-
-// change method GameOver
-public void GameOver(){
-	gameOverImage.setActive(true);
-	playButton.setActive(true);
-	Pause();
-}
-
-// change method IncreaseScore
-public void Increase(){
-	score++;
-	scoreText.text = score.toString();
-}
-```
-
-**Add GameObject to playButton OnClick attribute and add play method**
-
-**Add method in Player script:**
-
-*Script - Player*
-```
-// Player.cs
-private void OnEnable(){
-	Vector3 position = transform.position;
-	position.y = 0f;
-	transform.position = position;
-	// Direction also should be zero initially
-	direction = Vector3.zero;
-}
-```
+</div>
